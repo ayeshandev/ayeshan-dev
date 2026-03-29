@@ -1,0 +1,157 @@
+// Prisma 7 schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+// provider only — url is configured in prisma.config.ts (Prisma 7)
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Admin User (linked to Supabase Auth) ───
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  role      Role     @default(ADMIN)
+  avatarUrl String?
+  bio       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  posts        Post[]
+  projects     Project[]
+  socialLinks  SocialLink[]
+  siteSettings SiteSettings?
+}
+
+enum Role {
+  ADMIN
+  SUPER_ADMIN
+}
+
+// ─── Blog Posts ───
+
+model Post {
+  id          String     @id @default(uuid())
+  title       String
+  slug        String     @unique
+  excerpt     String?
+  content     Json       // Rich editor content (Tiptap JSON)
+  coverImage  String?
+  status      PostStatus @default(DRAFT)
+  publishedAt DateTime?
+  readingTime Int?       // Estimated minutes
+  author      User       @relation(fields: [authorId], references: [id])
+  authorId    String
+  tags        Tag[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([slug])
+  @@index([status, publishedAt])
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+// ─── Tags ───
+
+model Tag {
+  id    String @id @default(uuid())
+  name  String @unique
+  slug  String @unique
+  posts Post[]
+}
+
+// ─── Projects ───
+
+model Project {
+  id          String        @id @default(uuid())
+  title       String
+  slug        String        @unique
+  description String
+  longContent Json?         // Optional detailed write-up
+  coverImage  String?
+  techStack   String[]      // ["Next.js", "TypeScript", "Prisma"]
+  liveUrl     String?
+  githubUrl   String?
+  status      ProjectStatus @default(DRAFT)
+  featured    Boolean       @default(false)
+  sortOrder   Int           @default(0)
+  author      User          @relation(fields: [authorId], references: [id])
+  authorId    String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([slug])
+}
+
+enum ProjectStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+// ─── Contact Messages ───
+
+model ContactMessage {
+  id        String        @id @default(uuid())
+  name      String
+  email     String
+  subject   String?
+  message   String
+  status    MessageStatus @default(UNREAD)
+  createdAt DateTime      @default(now())
+
+  @@index([status, createdAt])
+}
+
+enum MessageStatus {
+  UNREAD
+  READ
+  REPLIED
+  ARCHIVED
+}
+
+// ─── Social Links ───
+
+model SocialLink {
+  id       String @id @default(uuid())
+  platform String // "github", "linkedin", "twitter", etc.
+  url      String
+  order    Int    @default(0)
+  user     User   @relation(fields: [userId], references: [id])
+  userId   String
+}
+
+// ─── Site Settings (single row) ───
+
+model SiteSettings {
+  id              String  @id @default(uuid())
+  siteName        String  @default("Ayeshan.dev")
+  siteDescription String?
+  siteUrl         String?
+  ogImage         String? // Default Open Graph image
+  analyticsId     String? // Future: Google Analytics ID
+  user            User    @relation(fields: [userId], references: [id])
+  userId          String  @unique
+}
+
+// ─── Page Views (basic analytics) ───
+
+model PageView {
+  id        String   @id @default(uuid())
+  path      String
+  referrer  String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([path, createdAt])
+}
