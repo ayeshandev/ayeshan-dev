@@ -46,3 +46,6 @@ src/generated/
 
 # project brief
 PROJECT_BRIEF.md
+
+# claude code
+.claude/
