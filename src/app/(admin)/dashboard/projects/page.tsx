@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
-import { deleteProject } from './actions'
+import { DeleteProjectButton } from '@/components/admin/DeleteButton'
 
 export default async function ProjectsPage() {
   const projects = await prisma.project.findMany({
@@ -54,7 +54,7 @@ export default async function ProjectsPage() {
                       >
                         Edit
                       </Link>
-                      <DeleteButton id={project.id} title={project.title} />
+                      <DeleteProjectButton id={project.id} title={project.title} />
                     </div>
                   </td>
                 </tr>
@@ -77,26 +77,5 @@ function StatusBadge({ status }: { status: string }) {
     <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${styles[status] ?? ''}`}>
       {status.charAt(0) + status.slice(1).toLowerCase()}
     </span>
-  )
-}
-
-function DeleteButton({ id, title }: { id: string; title: string }) {
-  return (
-    <form
-      action={async () => {
-        'use server'
-        await deleteProject(id)
-      }}
-    >
-      <button
-        type="submit"
-        className="text-red-500 hover:text-red-700 dark:hover:text-red-400"
-        onClick={(e) => {
-          if (!confirm(`Delete "${title}"?`)) e.preventDefault()
-        }}
-      >
-        Delete
-      </button>
-    </form>
   )
 }
